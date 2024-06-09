@@ -21,44 +21,48 @@ public_users.post("/register", (req,res) => {
     return res.status(404).json({message: "Unable to register user."});
   });
 
-// using Async-Await Axios for listing books
-public_users.get('/',async function (req, res) {
-    const booksDetail = await books;
-    res.send(booksDetail)
+// Get the book list available in the shop
+public_users.get('/', async function (req, res) {
+  const allbooks = await getAllBooks();
+  return res.send(JSON.stringify(allbooks, null, 4));
+  
 });
 
 // Get book details based on ISBN
-public_users.get('/isbn/:isbn',async function (req, res) {
-    const ISBN = req.params.isbn;
-    const bookDetails = await books;
-    res.send(bookDetails[ISBN])
+public_users.get('/isbn/:isbn', async function (req, res) {
+    const targetISBN = parseInt(req.params.isbn);
+    const targetBook = await books[targetISBN];
+    if (!targetBook) {
+      return res.status(404).json({ message: "ISBN not found." });
+    } else {
+      return res.status(200).json(targetBook);
+    }
  });
   
 // Get book details based on author
-public_users.get('/author/:author',async function (req, res) {
-    let author = req.params.author;
-    let filteredBooks = [];
-  
-    await Object.keys(books).forEach(function(key) {
-      if (books[key].author === author) {
-        filteredBooks.push(books[key]);
+public_users.get('/author/:author', async function (req, res) {
+    const matchingBooks = Object.values(await books).filter(
+        (book) => book.author.toLowerCase() === req.params.author.toLowerCase()
+      );
+      if (matchingBooks.length > 0) {
+        return res.status(200).send(JSON.stringify(matchingBooks, null, 4));
+      } else {
+        return res.status(404).json({ message: "No books by that author." });
       }
-    });
-    return res.send(filteredBooks);
 });
 
 // Get all books based on title
-public_users.get('/title/:title',async function (req, res) {
-    let title = req.params.title;
-    let filteredBooks = [];
-  
-    await Object.keys(books).forEach(function(key) {
-      if (books[key].title === title) {
-        filteredBooks.push(books[key]);
+public_users.get('/title/:title', async function (req, res) {
+    const matchingTitle = Object.values(await books).filter(
+        (book) => book.title.toLowerCase() === req.params.title.toLowerCase()
+      )[0];
+      if (matchingTitle) {
+        return res.status(200).json(matchingTitle);
+      } else {
+        return res.status(404).json({ message: "Title not found." });
       }
-    });
-    return res.send(filteredBooks);
 });
+
 
 //  Get book review
 public_users.get('/review/:isbn',function (req, res) {
